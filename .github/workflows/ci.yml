@@ -23,9 +23,11 @@ jobs:
   build-test:
     name: Build & Unit Test
     runs-on: ubuntu-latest
+
     env:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       PAYMENT_GATEWAY_API_KEY: ${{ secrets.PAYMENT_GATEWAY_API_KEY }}
+
     steps:
       # Action di-pin ke commit SHA (bukan tag) agar tidak bisa diganti diam-diam
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0

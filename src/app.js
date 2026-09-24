@@ -82,8 +82,8 @@ async function createApp() {
 
   // Cari pengguna berdasarkan nama
   app.get("/api/users/search", (req, res) => {
-    const q = req.query.q || "";
-    const rows = all(
+    const q = String(req.query.q || "");
+    const rows = allBound(
       db,
       "SELECT id, username, full_name FROM users WHERE full_name LIKE ?",
       [`%${q}%`],
@@ -93,7 +93,7 @@ async function createApp() {
 
   // Detail pengguna berdasarkan id
   app.get("/api/users/:id", (req, res) => {
-    const rows = all(
+    const rows = allBound(
       db,
       "SELECT id, username, full_name, role FROM users WHERE id = ?",
       [req.params.id],

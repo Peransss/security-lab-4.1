@@ -30,7 +30,15 @@ async function createApp() {
   // Halaman sambutan
   app.get("/welcome", (req, res) => {
     const name = req.query.name || "Tamu";
-    res.send(`<h1>Selamat datang di SecurePay, ${name}!</h1>`);
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    res.send(`<h1>Selamat datang di SecurePay, ${escapeHtml(name)}!</h1>`);
   });
 
   // Login -> mengembalikan JWT
@@ -74,20 +82,21 @@ async function createApp() {
 
   // Cari pengguna berdasarkan nama
   app.get("/api/users/search", (req, res) => {
-    const q = req.query.q || "";
-    const rows = all(
+    const q = String(req.query.q || "");
+    const rows = allBound(
       db,
-      `SELECT id, username, full_name FROM users WHERE full_name LIKE '%${q}%'`,
+      "SELECT id, username, full_name FROM users WHERE full_name LIKE ?",
+      [`%${q}%`],
     );
     res.json(rows);
   });
 
   // Detail pengguna berdasarkan id
   app.get("/api/users/:id", (req, res) => {
-    const rows = all(
+    const rows = allBound(
       db,
-      "SELECT id, username, full_name, role FROM users WHERE id = " +
-        req.params.id,
+      "SELECT id, username, full_name, role FROM users WHERE id = ?",
+      [req.params.id],
     );
     if (rows.length === 0)
       return res.status(404).json({ error: "Pengguna tidak ditemukan" });

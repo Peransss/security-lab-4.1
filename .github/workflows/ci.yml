@@ -80,25 +80,25 @@ jobs:
           cat app.log
           exit 1
 
-      - name: Prepare ZAP report
+      - name: Prepare ZAP workspace
         run: |
-          rm -f "${{ github.workspace }}/zap-report.html"
-          touch "${{ github.workspace }}/zap-report.html"
+          mkdir -p "${{ github.workspace }}/zap-work"
+          chmod 777 "${{ github.workspace }}/zap-work"
 
       - name: Test ZAP workspace
         run: |
           docker run --rm \
-            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            -v "${{ github.workspace }}/zap-work:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             touch /zap/wrk/zap-test.txt
 
-          ls -l zap-test.txt
+          ls -la "${{ github.workspace }}/zap-work"
 
       - name: OWASP ZAP Baseline Scan
         run: |
           docker run --rm -t \
             --network host \
-            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            -v "${{ github.workspace }}/zap-work:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
             -t http://localhost:3000/welcome \
@@ -110,8 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-report.html
-
+          path: ${{ github.workspace }}/zap-work/zap-report.html
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
 
   # ------------------------------------------------------------

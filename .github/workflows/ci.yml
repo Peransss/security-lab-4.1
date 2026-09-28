@@ -44,6 +44,73 @@ jobs:
 
       - run: npm test
 
+  test:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Application
+        run: |
+          npm start > app.log 2>&1 &
+
+      - name: Wait for Application
+        run: |
+          for i in {1..30}; do
+            if curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:3000/welcome | grep -q "^200$"; then
+              echo "Application is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Application failed to start"
+          cat app.log
+          exit 1
+
+      - name: Prepare ZAP workspace
+        run: |
+          mkdir -p "${{ github.workspace }}/zap-work"
+          chmod 777 "${{ github.workspace }}/zap-work"
+
+      - name: Test ZAP workspace
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/zap-work:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            touch /zap/wrk/zap-test.txt
+
+          ls -la "${{ github.workspace }}/zap-work"
+
+      - name: OWASP ZAP Baseline Scan
+        run: |
+          docker run --rm -t \
+            --network host \
+            -v "${{ github.workspace }}/zap-work:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:3000/welcome \
+            -m 3 \
+            -r zap-report.html
+
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: ${{ github.workspace }}/zap-work/zap-report.html
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
 
   # ------------------------------------------------------------
@@ -99,9 +166,9 @@ jobs:
         run: semgrep scan --config .semgrep/ --metrics=off --disable-version-check --error src
 
   # >>> TAHAP D: tambahkan job deploy (security gate)
-  
+
   # ------------------------------------------------------------
-  # TAHAP D -- Deploy: Security Gate
+  # TAHAP D -- Security gate: deploy hanya jika SEMUA pemeriksaan lolos
   # ------------------------------------------------------------
   deploy:
     name: Deploy ke Staging (simulasi)

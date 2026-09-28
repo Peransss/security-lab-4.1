@@ -44,6 +44,21 @@ jobs:
 
       - run: npm test
 
+      - name: Start Application
+        run: |
+          npm install
+          npm start &
+
+      - name: OWASP ZAP Scan
+        run: |
+          docker run --rm -t \
+            --network host \
+            -v ${{ github.workspace }}:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:3000 \
+            -r zap-report.html
+
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
 
   # ------------------------------------------------------------

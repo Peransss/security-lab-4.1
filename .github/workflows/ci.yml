@@ -44,48 +44,48 @@ jobs:
 
       - run: npm test
 
-test:
-  name: DAST (OWASP ZAP)
-  runs-on: ubuntu-latest
+  test:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-      with:
-        node-version: 22
-        cache: npm
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Start Application
-      run: |
-        npm start > app.log 2>&1 &
-        sleep 10
+      - name: Start Application
+        run: |
+          npm start > app.log 2>&1 &
+          sleep 10
 
-    - name: Check Application
-      run: |
-        curl --fail http://localhost:3000
+      - name: Check Application
+        run: |
+          curl --fail http://localhost:3000
 
-    - name: OWASP ZAP Baseline Scan
-      run: |
-        docker run --rm -t \
-          --network host \
-          -v "${{ github.workspace }}:/zap/wrk/:rw" \
-          ghcr.io/zaproxy/zaproxy:stable \
-          zap-baseline.py \
-          -t http://localhost:3000 \
-          -r zap-report.html
+      - name: OWASP ZAP Baseline Scan
+        run: |
+          docker run --rm -t \
+            --network host \
+            -v "${{ github.workspace }}:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:3000 \
+            -r zap-report.html
 
-    - name: Upload ZAP Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-report
-        path: zap-report.html
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
 
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
 

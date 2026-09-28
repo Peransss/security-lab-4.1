@@ -20,26 +20,6 @@ jobs:
   # CI dasar: install -> unit test.  (sudah HIJAU dari awal)
   # Tugas Anda: menambahkan security check ke pipeline ini.
   # ------------------------------------------------------------
-  test:
-    name: Testing OWASP ZAP Scan
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Start Application
-        run: |
-          npm install
-          npm start &
-
-      - name: OWASP ZAP Scan
-        run: |
-          docker run --rm -t \
-            --network host \
-            -v ${{ github.workspace }}:/zap/wrk/:rw \
-            ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py \
-            -t http://localhost:3000 \
-            -r zap-report.html
-
   build-test:
     name: Build & Unit Test
     runs-on: ubuntu-latest
@@ -63,6 +43,27 @@ jobs:
           node -e "console.log('PAYMENT_GATEWAY_API_KEY tersedia:', Boolean(process.env.PAYMENT_GATEWAY_API_KEY))"
 
       - run: npm test
+
+  test:
+    name: Testing OWASP ZAP Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Start Application
+        run: |
+          npm install
+          npm start &
+
+      - name: OWASP ZAP Scan
+        run: |
+          docker run --rm -t \
+            --network host \
+            -v ${{ github.workspace }}:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:3000 \
+            -r zap-report.html
+
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
 
   # ------------------------------------------------------------
